@@ -23,7 +23,6 @@
 #include <linux/if_packet.h>
 #include <netinet/if_ether.h>
 #include <sys/ioctl.h>
-#include <arpa/inet.h>
 
 #include "parprouted.h"
 
@@ -319,9 +318,8 @@ void *arp(char *ifname)
   struct sockaddr_ll ifs;
   struct ifreq ifr;
 
- /* TODO: FIXME properly (how should we do cancelling without pthread cancel support?) */
-  /* pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL); */
-  /* pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL); */
+  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+  pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
 
   sock = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ARP));
 
@@ -366,7 +364,7 @@ void *arp(char *ifname)
     struct in_addr dia;
 
     do {
-      //pthread_testcancel();
+      pthread_testcancel();
       /* Sleep a bit in order not to overload the system */
       usleep(300);
 

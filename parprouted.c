@@ -360,14 +360,14 @@ void *main_thread()
     signal(SIGTERM, sighandler);
     signal(SIGHUP, sighandler);
     
-    /* pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL); */
-    /* pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL); */
-    /* pthread_cleanup_push(cleanup, NULL); */
-    while (!perform_shutdown) {
-	/* if (perform_shutdown) { */
-	    /* pthread_exit(0); */
-	/* } */
-	/* pthread_testcancel(); */
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+    pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
+    pthread_cleanup_push(cleanup, NULL);
+    while (1) {
+	if (perform_shutdown) {
+	    pthread_exit(0);
+	}
+	pthread_testcancel();
         pthread_mutex_lock(&arptab_mutex);
         parseproc();
         processarp(0);
@@ -381,8 +381,7 @@ void *main_thread()
 	}
     }
     /* required since pthread_cleanup_* are implemented as macros */
-    /* pthread_cleanup_pop(0); */
-    return 0;
+    pthread_cleanup_pop(0);
 }
     
 int main (int argc, char **argv)
@@ -466,10 +465,10 @@ int main (int argc, char **argv)
     pthread_mutex_init(&arptab_mutex, NULL);
     pthread_mutex_init(&req_queue_mutex, NULL);
     
-    /* if (pthread_create(&my_threads[++last_thread_idx], NULL, main_thread, NULL)) { */
-    /*     syslog(LOG_ERR, "Error creating main thread."); */
-    /*     abort(); */
-    /* } */
+    if (pthread_create(&my_threads[++last_thread_idx], NULL, main_thread, NULL)) {
+	syslog(LOG_ERR, "Error creating main thread.");
+	abort();
+    }
 
     for (i=0; i <= last_iface_idx; i++) {
 	if (pthread_create(&my_threads[++last_thread_idx], NULL, (void *) arp, (void *) ifaces[i])) {
@@ -478,12 +477,11 @@ int main (int argc, char **argv)
 	}
 	if (debug) printf("Created ARP thread for %s.\n",ifaces[i]);
     }
-
-    main_thread();
-    /* if (pthread_join(my_threads[0], NULL)) { */
-    /*     syslog(LOG_ERR, "Error joining thread."); */
-    /*     abort(); */
-    /* } */
+        
+    if (pthread_join(my_threads[0], NULL)) {
+	syslog(LOG_ERR, "Error joining thread.");
+	abort();
+    }
 
     while (waitpid(-1, NULL, WNOHANG)) { }
     exit(1);     
