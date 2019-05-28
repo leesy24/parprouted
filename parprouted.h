@@ -61,6 +61,7 @@ typedef struct arptab_entry {
 } ARPTAB_ENTRY;
 
 extern int debug;
+extern int logenabled;
 extern int verbose;
 
 extern int option_arpperm;
